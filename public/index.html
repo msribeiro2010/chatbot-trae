@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAPJe AI - Chatbot Inteligente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>NAPJe AI</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <button class="new-chat-btn" id="newChatBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Nova Conversa</span>
+                </button>
+                
+                <div class="chat-history">
+                    <div class="chat-history-header">
+                        <h3>Conversas Recentes</h3>
+                        <button class="clear-history-btn" id="clearHistoryBtn" title="Limpar histórico">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="chat-list" id="chatList">
+                        <!-- Histórico de conversas será carregado aqui -->
+                    </div>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <button class="admin-btn" id="adminBtn">
+                        <i class="fas fa-cog"></i>
+                        <span>Administração</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>NAPJe AI</h1>
+                </div>
+                
+                <div class="header-right">
+                    <div class="search-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="webSearchToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Busca Web</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">Adm.Marcelo</span>
+                        <button class="profile-btn" id="profileBtn" title="Configurações de Perfil">
+                            <i class="fas fa-user-cog"></i>
+                        </button>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Container -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h2>Olá! Eu sou o NAPJe AI</h2>
+                        <p>Sou seu assistente inteligente. Posso ajudar você com informações dos documentos carregados e também buscar informações atualizadas na internet.</p>
+                        <div class="welcome-features">
+                            <div class="feature">
+                                <i class="fas fa-file-text"></i>
+                                <span>Análise de Documentos</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-search"></i>
+                                <span>Busca Inteligente</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-globe"></i>
+                                <span>Informações Atualizadas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Digite sua mensagem..."
+                            rows="1"
+                        ></textarea>
+                        <button id="sendBtn" class="send-btn" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="input-footer">
+                        <span class="input-hint">Pressione Enter para enviar, Shift+Enter para nova linha</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processando sua mensagem...</p>
+        </div>
+    </div>
+    
+    <!-- Admin Modal -->
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Painel de Administração</h2>
+                <button class="modal-close" id="closeAdminModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="upload">Upload de Documentos</button>
+                    <button class="tab-btn" data-tab="documents">Documentos</button>
+                    <button class="tab-btn" data-tab="stats">Estatísticas</button>
+                </div>
+                
+                <!-- Upload Tab -->
+                <div class="tab-content active" id="uploadTab">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>Carregar Documentos</h3>
+                        <p>Arraste arquivos aqui ou clique para selecionar</p>
+                        <p class="upload-formats">Formatos suportados: PDF, DOCX, TXT, MD</p>
+                        <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.md" hidden>
+                        <button class="upload-btn" id="selectFilesBtn">Selecionar Arquivos</button>
+                    </div>
+                    
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p id="progressText">Carregando...</p>
+                    </div>
+                </div>
+                
+                <!-- Documents Tab -->
+                <div class="tab-content" id="documentsTab">
+                    <div class="documents-header">
+                        <h3>Base de Conhecimento</h3>
+                        <button class="refresh-btn" id="refreshDocuments">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="documents-list" id="documentsList">
+                        <!-- Lista de documentos será carregada aqui -->
+                    </div>
+                </div>
+                
+                <!-- Stats Tab -->
+                <div class="tab-content" id="statsTab">
+                    <div class="stats-grid" id="statsGrid">
+                        <!-- Estatísticas serão carregadas aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+</body>
+</html>

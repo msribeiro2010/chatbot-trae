@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações de Perfil - AI Chatbot</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .profile-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .profile-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        
+        .avatar-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .avatar-option {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .avatar-option:hover {
+            transform: scale(1.1);
+            border-color: #007bff;
+        }
+        
+        .avatar-option.selected {
+            border-color: #007bff;
+            box-shadow: 0 0 15px rgba(0,123,255,0.3);
+        }
+        
+        .current-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 4px solid #007bff;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+        
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <a href="/" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Voltar ao Chat
+        </a>
+        
+        <div class="profile-header">
+            <h1><i class="fas fa-user-cog"></i> Configurações de Perfil</h1>
+            <div class="current-avatar" id="currentAvatar">
+                <i class="fas fa-user"></i>
+            </div>
+        </div>
+        
+        <div class="success-message" id="successMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+        
+        <form class="profile-form" id="profileForm">
+            <div class="form-group">
+                <label for="userName">Nome de Usuário:</label>
+                <input type="text" id="userName" name="name" placeholder="Digite seu nome" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Escolha seu Avatar:</label>
+                <div class="avatar-selection">
+                    <div class="avatar-option" data-avatar="fas fa-user" title="Usuário">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-user-tie" title="Administrador">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-user-graduate" title="Especialista">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-crown" title="Premium">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-rocket" title="Inovador">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-star" title="Estrela">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-heart" title="Coração">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="avatar-option" data-avatar="fas fa-coffee" title="Café">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-save">
+                <i class="fas fa-save"></i> Salvar Configurações
+            </button>
+        </form>
+    </div>
+    
+    <script>
+        class ProfileManager {
+            constructor() {
+                this.selectedAvatar = 'fas fa-user';
+                this.init();
+            }
+            
+            async init() {
+                await this.loadProfile();
+                this.setupEventListeners();
+            }
+            
+            async loadProfile() {
+                try {
+                    const response = await fetch('/api/profile');
+                    if (response.ok) {
+                        const profile = await response.json();
+                        document.getElementById('userName').value = profile.name || 'Adm.Marcelo';
+                        this.selectedAvatar = profile.avatar || 'fas fa-user';
+                        this.updateCurrentAvatar();
+                        this.updateAvatarSelection();
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar perfil:', error);
+                }
+            }
+            
+            setupEventListeners() {
+                // Avatar selection
+                document.querySelectorAll('.avatar-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        this.selectedAvatar = option.dataset.avatar;
+                        this.updateCurrentAvatar();
+                        this.updateAvatarSelection();
+                    });
+                });
+                
+                // Form submission
+                document.getElementById('profileForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveProfile();
+                });
+            }
+            
+            updateCurrentAvatar() {
+                const currentAvatar = document.getElementById('currentAvatar');
+                currentAvatar.innerHTML = `<i class="${this.selectedAvatar}"></i>`;
+            }
+            
+            updateAvatarSelection() {
+                document.querySelectorAll('.avatar-option').forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.avatar === this.selectedAvatar) {
+                        option.classList.add('selected');
+                    }
+                });
+            }
+            
+            async saveProfile() {
+                try {
+                    const name = document.getElementById('userName').value.trim();
+                    
+                    if (!name) {
+                        this.showError('Nome é obrigatório');
+                        return;
+                    }
+                    
+                    const response = await fetch('/api/profile', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            avatar: this.selectedAvatar
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        this.showSuccess('Perfil atualizado com sucesso!');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        this.showError(result.error || 'Erro ao salvar perfil');
+                    }
+                } catch (error) {
+                    console.error('Erro ao salvar perfil:', error);
+                    this.showError('Erro de conexão');
+                }
+            }
+            
+            showSuccess(message) {
+                const successDiv = document.getElementById('successMessage');
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+            
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            new ProfileManager();
+        });
+    </script>
+</body>
+</html>
