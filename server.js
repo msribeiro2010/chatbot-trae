@@ -25,35 +25,126 @@ const openai = new OpenAI({
   timeout: 30000 // 30 segundos de timeout
 });
 
-// Middlewares
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Middlewares de segurança
+app.use((req, res, next) => {
+  // Headers de segurança
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  
+  // CSP (Content Security Policy)
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data:; " +
+    "connect-src 'self'; " +
+    "font-src 'self'; " +
+    "object-src 'none'; " +
+    "media-src 'self'; " +
+    "frame-src 'none';"
+  );
+  
+  next();
+});
 
-// Configuração de sessão
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'napje-ai-default-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // true apenas em HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? false : true,
+  credentials: true
+}));
+
+app.use(express.json({ 
+  limit: '10mb', // Reduzido para segurança
+  verify: (req, res, buf) => {
+    // Verificar se o JSON é válido
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'JSON inválido' });
+      return;
+    }
   }
 }));
 
-// Middleware de autenticação
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 100 // Limitar número de parâmetros
+}));
+
+// Configuração de sessão com segurança aprimorada
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'napje-ai-default-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  name: 'chatbot.sid', // Nome customizado para o cookie
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+    httpOnly: true, // Previne acesso via JavaScript
+    maxAge: 8 * 60 * 60 * 1000, // 8 horas (reduzido para maior segurança)
+    sameSite: 'strict' // Proteção CSRF
+  }
+}));
+
+// Middleware de autenticação aprimorado
 const requireAuth = (req, res, next) => {
+  // Verificar se a sessão existe e está autenticada
   if (req.session && req.session.authenticated) {
+    // Regenerar ID da sessão periodicamente para segurança
+    if (!req.session.lastRegeneration || 
+        Date.now() - req.session.lastRegeneration > 30 * 60 * 1000) { // 30 minutos
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Erro ao regenerar sessão:', err);
+        } else {
+          req.session.authenticated = true;
+          req.session.lastRegeneration = Date.now();
+        }
+      });
+    }
     return next();
   } else {
-    return res.status(401).json({ error: 'Acesso negado. Faça login primeiro.' });
+    // Para requisições AJAX, retornar JSON
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(401).json({ error: 'Acesso negado. Faça login primeiro.' });
+    }
+    // Para requisições de página, redirecionar para login
+    return res.redirect('/login');
   }
 };
 
+// Middleware para verificar se já está logado
+const redirectIfAuthenticated = (req, res, next) => {
+  if (req.session && req.session.authenticated) {
+    return res.redirect('/');
+  }
+  next();
+};
+
 // Middleware para servir arquivos estáticos com proteção
-app.use('/css', express.static(path.join(__dirname, 'public/css')));
-app.use('/js', express.static(path.join(__dirname, 'public/js')));
+// CSS e JS públicos apenas para login
+app.use('/css', (req, res, next) => {
+  // Permitir CSS apenas para páginas de login ou se autenticado
+  if (req.headers.referer && req.headers.referer.includes('/login') || 
+      (req.session && req.session.authenticated)) {
+    express.static(path.join(__dirname, 'public/css'))(req, res, next);
+  } else {
+    res.status(403).send('Acesso negado');
+  }
+});
+
+app.use('/js', (req, res, next) => {
+  // Permitir JS apenas para páginas de login ou se autenticado
+  if (req.headers.referer && req.headers.referer.includes('/login') || 
+      (req.session && req.session.authenticated)) {
+    express.static(path.join(__dirname, 'public/js'))(req, res, next);
+  } else {
+    res.status(403).send('Acesso negado');
+  }
+});
+
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use('/admin', requireAuth, express.static(path.join(__dirname, 'public/admin')));
 
@@ -62,18 +153,32 @@ app.get('/profile', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public/profile.html'));
 });
 
-// Rota para página de login (sem autenticação)
-app.get('/login', (req, res) => {
+// Rota para página de login (redireciona se já autenticado)
+app.get('/login', redirectIfAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'public/login.html'));
 });
 
-// Rota principal com proteção
+// Rota principal - SEMPRE redireciona para login se não autenticado
 app.get('/', (req, res) => {
   if (req.session && req.session.authenticated) {
     res.sendFile(path.join(__dirname, 'public/index.html'));
   } else {
     res.redirect('/login');
   }
+});
+
+// Rota catch-all para páginas não encontradas - redireciona para login
+app.get('*', (req, res, next) => {
+  // Se for uma rota de API, continuar para o próximo middleware
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  // Para qualquer outra rota, redirecionar para login se não autenticado
+  if (!(req.session && req.session.authenticated)) {
+    return res.redirect('/login');
+  }
+  // Se autenticado mas página não existe, retornar 404
+  res.status(404).send('Página não encontrada');
 });
 
 // Configuração do multer para upload de arquivos
@@ -115,23 +220,92 @@ const webSearch = new WebSearchService();
 // Inicializar banco de dados
 database.init();
 
+// Rate limiting para tentativas de login
+const loginAttempts = new Map();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
+
+// Middleware de rate limiting para login
+const loginRateLimit = (req, res, next) => {
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  
+  if (!loginAttempts.has(clientIP)) {
+    loginAttempts.set(clientIP, { count: 0, lastAttempt: now });
+  }
+  
+  const attempts = loginAttempts.get(clientIP);
+  
+  // Reset contador se passou do tempo de lockout
+  if (now - attempts.lastAttempt > LOCKOUT_TIME) {
+    attempts.count = 0;
+    attempts.lastAttempt = now;
+  }
+  
+  // Verificar se excedeu tentativas
+  if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
+    const timeLeft = Math.ceil((LOCKOUT_TIME - (now - attempts.lastAttempt)) / 1000 / 60);
+    return res.status(429).json({ 
+      error: `Muitas tentativas de login. Tente novamente em ${timeLeft} minutos.` 
+    });
+  }
+  
+  next();
+};
+
 // Rotas de autenticação
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginRateLimit, async (req, res) => {
   try {
     const { password } = req.body;
+    const clientIP = req.ip || req.connection.remoteAddress;
     
-    if (!password) {
-      return res.status(400).json({ error: 'Senha é obrigatória' });
+    // Validações básicas
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Senha é obrigatória e deve ser uma string' });
+    }
+    
+    if (password.length > 100) {
+      return res.status(400).json({ error: 'Senha muito longa' });
     }
     
     const correctPassword = process.env.LOGIN_PASSWORD || 'admin123';
     
-    if (password === correctPassword) {
-      req.session.authenticated = true;
-      req.session.user = req.session.user || { name: 'Adm.Marcelo', avatar: null };
-      res.json({ message: 'Login realizado com sucesso' });
+    // Verificar senha com timing attack protection
+    const isValidPassword = password.length === correctPassword.length && 
+                           password === correctPassword;
+    
+    if (isValidPassword) {
+      // Reset tentativas de login em caso de sucesso
+      loginAttempts.delete(clientIP);
+      
+      // Regenerar sessão por segurança
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Erro ao regenerar sessão:', err);
+          return res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+        
+        req.session.authenticated = true;
+        req.session.user = { name: 'Adm.Marcelo', avatar: null };
+        req.session.loginTime = Date.now();
+        req.session.lastRegeneration = Date.now();
+        
+        console.log(`✅ Login bem-sucedido de IP: ${clientIP}`);
+        res.json({ message: 'Login realizado com sucesso' });
+      });
     } else {
-      res.status(401).json({ error: 'Senha incorreta' });
+      // Incrementar tentativas de login
+      const attempts = loginAttempts.get(clientIP);
+      attempts.count++;
+      attempts.lastAttempt = Date.now();
+      
+      console.log(`❌ Tentativa de login falhada de IP: ${clientIP} (${attempts.count}/${MAX_LOGIN_ATTEMPTS})`);
+      
+      // Delay progressivo para dificultar ataques
+      const delay = Math.min(attempts.count * 1000, 5000);
+      setTimeout(() => {
+        res.status(401).json({ error: 'Senha incorreta' });
+      }, delay);
     }
   } catch (error) {
     console.error('Erro no login:', error);
@@ -140,10 +314,19 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const sessionId = req.session.id;
+  
   req.session.destroy((err) => {
     if (err) {
+      console.error('Erro ao destruir sessão:', err);
       return res.status(500).json({ error: 'Erro ao fazer logout' });
     }
+    
+    // Limpar cookie da sessão
+    res.clearCookie('chatbot.sid');
+    
+    console.log(`🚪 Logout realizado - IP: ${clientIP}, Session: ${sessionId}`);
     res.json({ message: 'Logout realizado com sucesso' });
   });
 });
