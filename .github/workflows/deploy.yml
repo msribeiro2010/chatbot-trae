@@ -1,0 +1,89 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: 🧪 Tests and Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📋 Install dependencies
+      run: npm ci
+      
+    - name: 🔍 Lint code
+      run: |
+        # Verificar sintaxe JavaScript
+        node -c server.js
+        find . -name "*.js" -not -path "./node_modules/*" -exec node -c {} \;
+        
+    - name: 🔒 Security audit
+      run: npm audit --audit-level moderate
+      
+    - name: 📊 Check file structure
+      run: |
+        # Verificar arquivos essenciais
+        test -f server.js || exit 1
+        test -f package.json || exit 1
+        test -f vercel.json || exit 1
+        test -f .env.example || exit 1
+        test -f .gitignore || exit 1
+        
+    - name: 🔧 Validate configuration
+      run: |
+        # Verificar se .env não está commitado
+        if [ -f .env ]; then
+          echo "❌ Arquivo .env encontrado no repositório!"
+          exit 1
+        fi
+        
+        # Verificar .gitignore
+        grep -q "node_modules" .gitignore || exit 1
+        grep -q "\.env" .gitignore || exit 1
+        
+  deploy:
+    name: 🌐 Deploy to Vercel
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🚀 Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.ORG_ID }}
+        vercel-project-id: ${{ secrets.PROJECT_ID }}
+        vercel-args: '--prod'
+        
+  notify:
+    name: 📢 Notify Status
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: 📊 Deploy Status
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "✅ Deploy realizado com sucesso!"
+        else
+          echo "❌ Deploy falhou!"
+          exit 1
+        fi
