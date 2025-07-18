@@ -2,6 +2,146 @@
 
 Um chatbot moderno e inteligente que combina a potência da OpenAI com uma base de conhecimento local e capacidades de busca na web.
 
+## 🚀 Deploy no GitHub e Vercel
+
+### Pré-requisitos
+- Conta no [GitHub](https://github.com)
+- Conta na [Vercel](https://vercel.com)
+- Chave da API OpenAI
+- Git instalado localmente
+
+### Passo 1: Subir para o GitHub
+
+1. **Inicializar repositório Git (se ainda não foi feito):**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   ```
+
+2. **Criar repositório no GitHub:**
+   - Acesse [GitHub](https://github.com) e faça login
+   - Clique em "New repository"
+   - Nome: `chatbot-trae` (ou outro nome de sua escolha)
+   - Deixe como público ou privado conforme preferir
+   - **NÃO** marque "Initialize with README" (já temos um)
+   - Clique em "Create repository"
+
+3. **Conectar repositório local ao GitHub:**
+   ```bash
+   git remote add origin https://github.com/SEU_USUARIO/chatbot-trae.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+### Passo 2: Deploy na Vercel
+
+1. **Acessar Vercel:**
+   - Vá para [vercel.com](https://vercel.com)
+   - Faça login com sua conta GitHub
+
+2. **Importar projeto:**
+   - Clique em "New Project"
+   - Selecione o repositório `chatbot-trae`
+   - Clique em "Import"
+
+3. **Configurar variáveis de ambiente:**
+   Na seção "Environment Variables", adicione:
+   ```
+   OPENAI_API_KEY=sua_chave_openai_aqui
+   LOGIN_PASSWORD=sua_senha_segura_aqui
+   SESSION_SECRET=uma_chave_secreta_aleatoria_aqui
+   PORT=3000
+   DB_PATH=./database.sqlite
+   UPLOAD_DIR=./uploads
+   MAX_FILE_SIZE=10485760
+   WEB_SEARCH_ENABLED=true
+   ```
+
+4. **Deploy:**
+   - Clique em "Deploy"
+   - Aguarde o processo de build e deploy
+   - Sua aplicação estará disponível em uma URL como: `https://chatbot-trae.vercel.app`
+
+### Passo 3: Configurações Importantes
+
+#### Variáveis de Ambiente Obrigatórias:
+- `OPENAI_API_KEY`: Sua chave da API OpenAI
+- `LOGIN_PASSWORD`: Senha para acessar o sistema
+- `SESSION_SECRET`: Chave secreta para sessões (gere uma aleatória)
+
+#### Variáveis Opcionais:
+- `PORT`: Porta do servidor (padrão: 3000)
+- `DB_PATH`: Caminho do banco SQLite
+- `UPLOAD_DIR`: Diretório de uploads
+- `MAX_FILE_SIZE`: Tamanho máximo de arquivo (bytes)
+- `WEB_SEARCH_ENABLED`: Habilitar busca web
+
+### Passo 4: Atualizações Futuras
+
+Para atualizar a aplicação:
+
+1. **Fazer alterações localmente**
+2. **Commit e push:**
+   ```bash
+   git add .
+   git commit -m "Descrição das alterações"
+   git push origin main
+   ```
+3. **A Vercel fará o redeploy automaticamente**
+
+### 🔧 Configuração Local para Desenvolvimento
+
+1. **Instalar dependências:**
+   ```bash
+   npm install
+   ```
+
+2. **Criar arquivo .env:**
+   ```bash
+   cp .env.example .env
+   ```
+   Edite o arquivo `.env` com suas configurações.
+
+3. **Executar em modo desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Executar em modo produção:**
+   ```bash
+   npm start
+   ```
+
+### 📝 Notas Importantes
+
+- O arquivo `vercel.json` já está configurado para o deploy
+- O `.gitignore` protege arquivos sensíveis
+- O banco SQLite será criado automaticamente na Vercel
+- Os uploads são temporários na Vercel (use storage externo para produção)
+- A aplicação usa autenticação por senha simples
+
+### 🆘 Solução de Problemas
+
+**Erro de build na Vercel:**
+- Verifique se todas as dependências estão no `package.json`
+- Confirme se as variáveis de ambiente estão configuradas
+
+**Erro de autenticação:**
+- Verifique se `LOGIN_PASSWORD` está definida
+- Confirme se `SESSION_SECRET` está configurada
+
+**Erro de OpenAI:**
+- Verifique se `OPENAI_API_KEY` está correta
+- Confirme se há créditos na conta OpenAI
+
+### 📞 Suporte
+
+Se encontrar problemas, verifique:
+1. Logs da Vercel (aba "Functions")
+2. Console do navegador
+3. Configurações de variáveis de ambiente
+
 ## 🚀 Funcionalidades
 
 - **Chat Inteligente**: Integração com OpenAI GPT-3.5-turbo
